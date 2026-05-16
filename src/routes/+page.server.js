@@ -8,7 +8,6 @@ const sql = neon(DATABASE_URL);
 
 // SvelteKit calls this function whenever the page is requested.
 export async function load() {
-  // Fetch all transactions, cast the date safely, and sort chronologically
   const rows = await sql`
     SELECT id, date::text AS date, description, debit, credit, amount
     FROM transactions
@@ -16,13 +15,12 @@ export async function load() {
   `;
 
   return { transactions: rows };
-} // ⬅️ This closing bracket completely seals the load function!
+}
 
-// Now actions is on the outside, which is legal and correct
+// Backend Form Actions
 export const actions = {
-  // 'default' runs when a form on the page is submitted with no action= attribute.
-  default: async ({ request }) => {
-    // 1. Get the form data the browser sent.
+  // CHANGE THIS FROM 'default' TO 'create'
+  create: async ({ request }) => {
     const formData = await request.formData();
     const date        = formData.get('date');
     const description = formData.get('description');
@@ -30,13 +28,24 @@ export const actions = {
     const credit      = formData.get('credit');
     const amount      = formData.get('amount');
 
-    // 2. Insert the row into the transactions table
     await sql`
       INSERT INTO transactions (date, description, debit, credit, amount)
       VALUES (${date}, ${description}, ${debit}, ${credit}, ${amount})
     `;
 
-    // 3. Return success. SvelteKit will re-run load() automatically.
+    return { success: true };
+  },
+
+  // Leave your delete action exactly as it is
+  delete: async ({ request }) => {
+    const formData = await request.formData();
+    const id = formData.get('id');
+
+    await sql`
+      DELETE FROM transactions 
+      WHERE id = ${id}
+    `;
+
     return { success: true };
   }
 };
